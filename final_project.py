@@ -110,3 +110,65 @@ plt.title("Accuracy")
 plt.savefig("results/accuracy.png")
 
 print("Training complete. Graphs saved.")
+
+
+# 8. Test on handwritten digits
+
+import os
+import numpy as np
+from PIL import Image
+
+custom_path = "Handwritten-Digits-Spring-2026/digits"
+
+images = []
+labels = []
+
+for file in os.listdir(custom_path):
+    if file.endswith(".png"):
+        label = int(file.split("-")[0])
+        img_path = os.path.join(custom_path, file)
+
+        img = Image.open(img_path).convert("L")
+        img = img.resize((28, 28)) 
+        img = np.array(img)
+        img = np.array(img)
+
+        images.append(img)
+        labels.append(label)
+
+images = np.array(images)
+labels = np.array(labels)
+
+# Apply same transform as MNIST
+images = images / 255.0
+images = (images - 0.5) / 0.5  # normalize to [-1,1]
+images = images.reshape(-1, 1, 28, 28)
+
+images_tensor = torch.tensor(images, dtype=torch.float32).to(device)
+labels_tensor = torch.tensor(labels).to(device)
+
+# Run model
+model.eval()
+with torch.no_grad():
+    outputs = model(images_tensor)
+    _, predicted = torch.max(outputs, 1)
+
+# Accuracy
+correct = (predicted == labels_tensor).sum().item()
+total = labels_tensor.size(0)
+accuracy = 100 * correct / total
+
+print(f"\nHandwritten Digit Accuracy: {accuracy:.2f}%")
+
+
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+
+cm = confusion_matrix(labels_tensor.cpu(), predicted.cpu())
+
+plt.figure(figsize=(8,6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix (Handwritten Digits)")
+plt.savefig("results/confusion_matrix.png")
